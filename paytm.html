@@ -1,0 +1,36 @@
+<button onclick="onScriptLoad()">Pay</button>
+<script type="application/javascript" crossorigin="anonymous" src="https://securegw-stage.paytm.in/merchantpgpui/checkoutjs/merchants/bxoawj84966211594074.js" onload="onScriptLoad();"> </script>
+<script>
+  function onScriptLoad(){
+      console.log('here')
+      var config = {
+        "root": "",
+        "flow": "DEFAULT",
+        "data": {
+        "orderId": "ORDERID_0001", /* update order id */
+        "token": "d79b4c43ae5f43b39b92892d888bcbe71603540780087", /* update token value */
+        "tokenType": "TXN_TOKEN",
+        "amount": "1.00" /* update amount */
+        },
+        "handler": {
+          "notifyMerchant": function(eventName,data){
+            console.log("notifyMerchant handler function called");
+            console.log("eventName => ",eventName);
+            console.log("data => ",data);
+          } 
+        }
+      };
+
+      if(window.Paytm && window.Paytm.CheckoutJS){
+          window.Paytm.CheckoutJS.onLoad(function excecuteAfterCompleteLoad() {
+              // initialze configuration using init method 
+              window.Paytm.CheckoutJS.init(config).then(function onSuccess() {
+                  // after successfully updating configuration, invoke JS Checkout
+                  window.Paytm.CheckoutJS.invoke();
+              }).catch(function onError(error){
+                  console.log("error => ",error);
+              });
+          });
+      } 
+  }
+</script>
