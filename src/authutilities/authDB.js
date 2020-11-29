@@ -66,11 +66,43 @@ class AuthDB {
     // return await bcrypt.compare(body.password, salt[0][0].password);
   }
 
-  // async addOtp(email, otp) {
-  //   let sql = `INSERT INTO unverified_users(email,otp) VALUES ("${email}","${otp}")`;
-  //   await mysql.query(sql);
-  //   return true;
-  // }
+  async forgotOtp(email, otp) {
+    let sql = `update users set reset_otp = "${otp}" where email = "${email}" `;
+
+    await mysql.query(sql);
+    return true;
+  }
+
+  async verifyResendOtp(email,otp){
+    let sql = `Select * from users where email = "${email}" and reset_otp = "${otp}"`;
+    console.log(sql)
+    let res = await mysql.query(sql);
+    console.log(res[0].length)
+    return (res[0].length ? res[0] : null);
+  }
+  async resetPassword(email,otp,password){
+    if(await this.verifyResendOtp(email,otp)){
+      await new Promise(resolve => {
+        bcrypt.genSalt(10, async function(err, salt) {
+          if (err) {
+            throw err;
+          }
+          await bcrypt.hash(password, salt, async function(error, hash) {
+            if (error) {
+              throw error;
+            }
+            let sql = `update users set password = "${hash}" , reset_otp = ${null} where email = "${email}"`;
+            await mysql.query(sql);
+            resolve(hash);
+          });
+        });
+      });
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
 
   async resend(body, otp,motp) {
     if (this.loginUser(body)) {

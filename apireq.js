@@ -1,6 +1,5 @@
 let express = require('express');
 let app = express();
-let { sendOtp } = require('./src/otpTry');
 const Login = require('./src/login');
 const Endpoint = require('./src/endpoint');
 const Auth = require('./src/authutilities/authutilities');
@@ -9,21 +8,9 @@ const Cors = require('cors');
 const endpoint = new Endpoint();
 const login = new Login();
 const auth = new Auth();
-const https = require('https');
-
-const path = require('path')
-const qs = require('querystring')
-const ejs = require('ejs')
-const parseUrl = express.urlencoded({ extended: false })
-const parseJson = express.json({ extended: false })
-app.set('views', path.join(__dirname, 'views'))
-app.set('view engine', 'ejs')
+express.urlencoded({ extended: false })
+express.json({ extended: false })
 const { response } = require('express')
-
-/*
-* import checksum generation utility
-* You can get this utility from https://developer.paytm.com/docs/checksum/
-*/
 
 app.use(Cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -84,8 +71,16 @@ app.post('/cachelogin', function(req, res) {
     res.status(403).send('error');
   }
 });
-app.post('/forgot', function(req, res) {
-  let result = sendOtp();
+
+app.post('/forgotpassword',async function(req, res) {
+  let result = await login.forgotPassword(req,res);
+  res.append('Access-Control-Expose-Headers', 'error');
+  res.send(result);
+});
+
+app.post('/resetpassword',async function(req, res) {
+  let result = await login.resetPassword(req,res);
+  res.append('Access-Control-Expose-Headers', 'error');
   res.send(result);
 });
 

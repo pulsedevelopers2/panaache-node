@@ -83,6 +83,13 @@ class AuthUtilities {
     return true;
   }
 
+  async forgotOtp(email,msg){
+    let otp = msg.toString();
+    otp = this.encrypt(otp);
+    await authDB.forgotOtp(email,otp);
+    return true;
+  }
+
   sendToken(body, parser) {
     let mail = body.email;
     let time = new Date().getTime() + 7200000;

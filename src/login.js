@@ -143,5 +143,37 @@ class Login {
     req.end();
 }
 
+async forgotPassword(req,res){
+  let email = req.headers.email;
+  let result = await authDB.getUser(email);
+  if(result){
+    try{
+      let otp = await Math.floor(1000 + (9999 - 1000) * Math.random());
+      await auth.forgotOtp(email,otp)
+      console.log(otp)
+      //await Promise.all([this.sendMsgOtp(userBody.phone,otp),sendMail(userBody.email, otp)])
+    }
+    catch{
+      res.append('error','error')
+    }
+    return 'Success';
+  }
+  else{
+    res.append('error','NoUserException')
+  }
+}
+
+async resetPassword(req,res){
+  let encryptedBody = req.headers.body;
+  let userBodyStr = Buffer.from(encryptedBody, 'base64').toString();
+  let userBody = JSON.parse(userBodyStr);
+  let result = await authDB.resetPassword(userBody.email,auth.encrypt(userBody.otp.toString()),userBody.password)
+  if(result){
+    return 'Success'
+  }
+  else{
+    res.append('error','IncorrectOtp')
+  }
+}
 }
 module.exports = Login;
