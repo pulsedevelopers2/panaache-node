@@ -77,6 +77,12 @@ class UtilsDB {
     return result;
   }
 
+  async addTnxDetails(email,tnx_id,details,rate,amount,timestamp){
+    let sql = `insert into order_summary(tnx_id,email,order_details,curr_price,amount,timestamp) values ("${tnx_id}","${email}","${details}",${rate},${amount},${timestamp}) `;
+    let result = await mysql.query(sql);
+    return result;
+  }
+
   async viewCart(email) {
     let sql = `select users_cart.*, items.image_link ,items.title from users_cart left join items on users_cart.item_id = items.id where users_cart.user_email = "${email}"`
     let result = await mysql.query(sql);

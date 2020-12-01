@@ -67,6 +67,7 @@ class Utils {
       let price = 0;
       price = (item.weight * purity[metal.toUpperCase()] * liveRate) / 0.995;
       let details = this.getGoldCosting(item, price);
+      details.mkCharges = details.weight*900;
       return details;
     }) || []);
 
@@ -77,10 +78,11 @@ class Utils {
     let total_cost = Math.round(gold_rate*100)/100 + making_charges + diamond_cost + gst;// total
     result.diamond_cost = diamond_cost;
     result.gold_rate = Math.round(gold_rate*100)/100;
-    result.making_charges = making_charges;
+    //result.making_charges = making_charges;
     result.gst = Math.round(gst);
     result.total_cost = Math.round(total_cost);
     result.gold_weight = gold_rates.weight;
+    //console.log(result)
     return result;
   }
 
@@ -155,6 +157,11 @@ class Utils {
     result = await this.getCartPrice(result);
     result = await this.purifyCart(result);
     return result;
+  }
+
+  async addTnxDetails(email,id,userBody,rate,amount,timestamp){
+    let result = await utilsDB.addTnxDetails(email,id,userBody,rate,amount,timestamp);
+    return true;
   }
 
   async getCartPrice(result) {

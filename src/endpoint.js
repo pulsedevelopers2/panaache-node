@@ -1,6 +1,8 @@
 const Utils = require('./utilities/utils');
 const Razorpay = require('razorpay');
-const crypto = require('crypto')
+const crypto = require('crypto');
+const { count } = require('console');
+const AuthUtilities = require('./authutilities/authutilities');
 const utils = new Utils();
 const instance = new Razorpay({
   key_id:"rzp_test_lTEoCEehuqOkFf",
@@ -50,23 +52,80 @@ class Endpoint {
     return result;
   }
 
-  async createOrder(email){
-    let result = await utils.viewCart(email);
-    let finalPrice = 0;
-    result.forEach(item => {
-      finalPrice = finalPrice + item.finalPrice;
-    });
+  // async createOrder(email){
+  //   let result = await utils.viewCart(email);
+  //   let finalPrice = 0;
+  //   result.forEach(item => {
+  //     finalPrice = finalPrice + item.finalPrice;
+  //   });
+  //   console.log(finalPrice)
+  //   var options = {
+  //     amount: finalPrice*100,  // amount in the smallest currency unit
+  //     currency: "INR",
+  //     receipt: "order_rcptid_1011"
+  //   };
+  //   instance.orders.create(options).then(async (data)=>{
+  //   result = await utils.addTnxDetails(email,data.id);
+  //     console.log(data);
+  //     return data;
+  //   })
+  // }
+  async createOrder(req,email){
+    let encryptedBody = req.body.checkout;
+    //console.log(typeof encryptedBody)
+    let userBodyStr = Buffer.from(encryptedBody, 'base64').toString();
+    let userBody = JSON.parse(userBodyStr);
+    userBody.cart.final_price = await Promise.all(userBody.cart.map(async item =>{
+      let result = await utils.getPrice(item.item_id,item.quality,item.color,item.size,item.metal)
+      return result.total_cost
+    }))
+    var final = userBody.cart.final_price.reduce(function(a,b){
+      return a + b;
+    }, 0)
+    let curr_price = 5000;
+    //console.log(userBody)
+    // let result = await utils.viewCart(email);
+    // result.forEach(item => {
+    //   finalPrice = finalPrice + item.finalPrice;
+    // });
+    let d = new Date();
     var options = {
-      amount: finalPrice*100,  // amount in the smallest currency unit
+      amount: final*100,  // amount in the smallest currency unit
       currency: "INR",
-      receipt: "order_rcptid_1011"
+      receipt: "Panaache_"+d.getTime()
     };
-    instance.orders.create(options).then((data)=>{
-      console.log(data);
-      return data;
+    
+    userBody.cart = userBody.cart.map( item => {
+      delete item['image_link'];
+      delete item['title'];
+      return Object.values(item);
+    });
+    let details = JSON.stringify(userBody);
+    details = details.toString().replace(/"/g,'\\"');
+    return instance.orders.create(options).then(async (data)=>{
+      
+   let result = await utils.addTnxDetails(email,data.id,details,curr_price,data.amount/100,d.getTime());
+   if(result){
+     data.key = "rzp_test_lTEoCEehuqOkFf";
+    return data;
+   }else{
+     return 'error';
+   }
+      
     })
   }
 
+  async verifyPayment(req,res){
+ let  razorpay_order_id = "order_G7pByBhDeswc71"
+ let razorpay_payment_id =  "pay_G7pSvQh9FVvMOX"
+ let razorpay_signature =  "a658c8c15d2c06b6c7921b30bc4a195b825af8f118e18982ed081cca704e8ea2"
+ let secret = "dZpYLxagmZzczoCj1zfq7ffV"
+ var generatedSignature = crypto
+ .createHmac("SHA256",secret)
+ .update( razorpay_order_id + "|" + razorpay_payment_id)
+ .digest("hex");
+ return (generatedSignature == razorpay_signature)
+  }
 
 }
 module.exports = Endpoint;

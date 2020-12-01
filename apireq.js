@@ -11,7 +11,7 @@ const auth = new Auth();
 express.urlencoded({ extended: false })
 express.json({ extended: false })
 const { response } = require('express')
-
+const crypto = require('crypto')
 app.use(Cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(function(req, res, next) {
@@ -179,19 +179,26 @@ app.post('/updateCart', jsonParser, async function(req,res){
     res.send(result);
 })
 
-app.post('/placeorder',async function(req, res){
-  email = "pulse.developers2@gmail.com"
-  let result = await endpoint.createOrder(email);
-  console.log(result)
-  res.send(result)
+app.post('/placeorder', jsonParser,async function(req, res){
+  email = login.verifyToken(req,'token',false)
+  if(email){
+    let result = await endpoint.createOrder(req,email);
+    console.log(result)
+    res.send(result)
+  }
+})
+
+app.post('/verify',async function(req,res){
+  let result = await endpoint.verifyPayment(req,res)
+  console.log(result)  
 })
 
 
-app.get('/send', async function(req,res){
-  otp = 332934;
-  mobile = 9611466394;
-  let result = login.sendMsgOtp(mobile,otp);
-  res.send(result);
-})
+// app.get('/send', async function(req,res){
+//   otp = 332934;
+//   mobile = 9611466394;
+//   let result = login.sendMsgOtp(mobile,otp);
+//   res.send(result);
+// })
 
 app.listen(8080);
