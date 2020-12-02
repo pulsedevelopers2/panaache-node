@@ -172,5 +172,19 @@ class Utils {
     })) || [];
     return tempResult;
   }
+
+  async getOrderDetails(email){
+    let result = await utilsDB.getOrderDetails(email);
+    result.forEach(item =>{
+      item.order_details = JSON.parse(item.order_details)
+    })
+    //console.log(result)
+    return result;
+  }
+
+  async changeOrderStatus(email,tnx_id,status){
+    let result = await utilsDB.changeOrderStatus(email,tnx_id,status)
+    return result;
+  }
 }
 module.exports = Utils;

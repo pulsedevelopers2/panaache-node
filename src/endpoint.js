@@ -74,7 +74,7 @@ class Endpoint {
     let encryptedBody = req.body.checkout;
     //console.log(typeof encryptedBody)
     let userBodyStr = Buffer.from(encryptedBody, 'base64').toString();
-    let userBody = JSON.parse(userBodyStr);
+    let userBody = JSON.parse(userBodyStr); 
     userBody.cart.final_price = await Promise.all(userBody.cart.map(async item =>{
       let result = await utils.getPrice(item.item_id,item.quality,item.color,item.size,item.metal)
       return result.total_cost
@@ -83,7 +83,7 @@ class Endpoint {
       return a + b;
     }, 0)
     let curr_price = 5000;
-    //console.log(userBody)
+    let addr = userBody.address
     // let result = await utils.viewCart(email);
     // result.forEach(item => {
     //   finalPrice = finalPrice + item.finalPrice;
@@ -103,28 +103,40 @@ class Endpoint {
     let details = JSON.stringify(userBody);
     details = details.toString().replace(/"/g,'\\"');
     return instance.orders.create(options).then(async (data)=>{
-      
    let result = await utils.addTnxDetails(email,data.id,details,curr_price,data.amount/100,d.getTime());
    if(result){
      data.key = "rzp_test_lTEoCEehuqOkFf";
+     data.email = email;
+     data.addrDetails = addr;
     return data;
    }else{
      return 'error';
    }
-      
     })
   }
 
-  async verifyPayment(req,res){
+async verifyPayment(req,res,email){
  let  razorpay_order_id = "order_G7pByBhDeswc71"
  let razorpay_payment_id =  "pay_G7pSvQh9FVvMOX"
  let razorpay_signature =  "a658c8c15d2c06b6c7921b30bc4a195b825af8f118e18982ed081cca704e8ea2"
  let secret = "dZpYLxagmZzczoCj1zfq7ffV"
- var generatedSignature = crypto
- .createHmac("SHA256",secret)
+ let result = ''
+ var generatedSignature = crypto.createHmac("SHA256",secret)
  .update( razorpay_order_id + "|" + razorpay_payment_id)
  .digest("hex");
- return (generatedSignature == razorpay_signature)
+ if(generatedSignature == razorpay_signature){
+  //change status
+  result = await utils.changeOrderStatus(email,razorpay_order_id,'order_placed')
+  result = await utils.getOrderDetails(email)
+ }else{
+   result = 'error';
+ }
+ return result;
+  }
+
+  async getOrderDetails(email){
+    let result =await utils.getOrderDetails(email);
+    return result;
   }
 
 }

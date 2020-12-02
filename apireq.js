@@ -180,7 +180,7 @@ app.post('/updateCart', jsonParser, async function(req,res){
 })
 
 app.post('/placeorder', jsonParser,async function(req, res){
-  email = login.verifyToken(req,'token',false)
+  let email = login.verifyToken(req,'token',false)
   if(email){
     let result = await endpoint.createOrder(req,email);
     console.log(result)
@@ -188,17 +188,22 @@ app.post('/placeorder', jsonParser,async function(req, res){
   }
 })
 
-app.post('/verify',async function(req,res){
-  let result = await endpoint.verifyPayment(req,res)
-  console.log(result)  
+app.post('/verifyorder',async function(req,res){
+  //let email = login.verifyToken(req,'token',false)
+  let email = 'sandesh.bafna8@gmail.com'
+  if(email){
+    let result = await endpoint.verifyPayment(req,res,email)
+    console.log(result)  
+  }
 })
 
+app.post('/getorders',async function(req,res){
+  //let email = login.verifyToken(req,'token',false)
+  let email = 'sandesh.bafna8@gmail.com'
+  if(email){
+    let result = await endpoint.getOrderDetails(email)
+    //console.log(result)
+  }
 
-// app.get('/send', async function(req,res){
-//   otp = 332934;
-//   mobile = 9611466394;
-//   let result = login.sendMsgOtp(mobile,otp);
-//   res.send(result);
-// })
-
+})
 app.listen(8080);
