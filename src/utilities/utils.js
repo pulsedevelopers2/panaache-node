@@ -16,12 +16,12 @@ class Utils {
     result.dcolors = color.map(item => {return item.color;});
     result = this.purifyItems([result])[0];
     [result.metal, result.fashion, result.stock] = await Promise.all([this.getItemDetails('metal', id), this.getItemDetails('fashion', id), this.getItemDetails('stock', id)]);
-    result.gold_details = result.gold_details.map(item => {
+    result.gold_details = result.gold_details && result.gold_details.map(item => {
       let price = 0;
       price = (item.weight * 0.77 * liveRate) / 0.995;
       let details = this.getGoldCosting(item, price);
       return details;
-    });
+    }) || [];
     return result;
   }
 
@@ -175,15 +175,33 @@ class Utils {
 
   async getOrderDetails(email){
     let result = await utilsDB.getOrderDetails(email);
-    result.forEach(item =>{
+    result.forEach(async item =>{
       item.order_details = JSON.parse(item.order_details)
+      //  await item.order_details.cart.forEach(async item =>{
+        //console.log(item.item_id)
+        // result = await utilsDB.getItem(item.item_id)
+        // console.log(result.image_link)
+        // item.image_link =JSON.stringify(result.image_link)
+      // })
     })
-    //console.log(result)
     return result;
   }
 
-  async changeOrderStatus(email,tnx_id,status){
-    let result = await utilsDB.changeOrderStatus(email,tnx_id,status)
+  async changeOrderStatus(email,tnx_id,status,payment_id){
+    let result = await utilsDB.changeOrderStatus(email,tnx_id,status,payment_id)
+    return result;
+  }
+
+  async deleteOrderCart(email,tnx_id){
+    let result = await utilsDB.getOrderDetails(email,tnx_id);
+    result = JSON.parse(result[0].order_details).cart
+    result.forEach(item =>{
+      utilsDB.removeItem(item.cart_id,item.user_email)
+    })
+  }
+
+  async getItemInfo(id){
+    let result = await utilsDB.getItemInfo(id)
     return result;
   }
 }

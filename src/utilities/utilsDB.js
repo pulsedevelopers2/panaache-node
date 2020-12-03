@@ -83,18 +83,30 @@ class UtilsDB {
     return result;
   }
 
-  async getOrderDetails(email){
-    let sql = `select * from order_summary where email = '${email}'`
+  async getOrderDetails(email,tnx_id = null){
+    let sql = ''
+    if(tnx_id){
+      sql = `select * from order_summary where email = '${email}' and tnx_id = '${tnx_id}'`
+    }else{
+      sql = `select * from order_summary where email = '${email}' and status = 'order_placed'`
+    }
     let result = await mysql.query(sql);
     return (result[0].length ? result[0]: []);
   }
 
-  async changeOrderStatus(email,tnx_id,status){
-    let sql = `update order_summary set status = "${status}" where email = "${email}" and tnx_id = "${tnx_id}"`;
+  async getItemInfo(id){
+    let sql = `Select image_link,title from items where id = "${id}"`;
+    let res = await mysql.query(sql);
+    return (res[0].length ? res[0][0] : null);
+  }
+
+  async changeOrderStatus(email,tnx_id,status,payment_id){
+    let sql = `update order_summary set status = "${status}",payment_id = "${payment_id}" where email = "${email}" and tnx_id = "${tnx_id}"`;
     let result = await mysql.query(sql);
     //return this.getOrderDetails(email);
-    return true;
+    return result;
   }
+  
   async viewCart(email) {
     let sql = `select users_cart.*, items.image_link ,items.title from users_cart left join items on users_cart.item_id = items.id where users_cart.user_email = "${email}"`
     let result = await mysql.query(sql);

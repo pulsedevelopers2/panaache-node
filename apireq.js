@@ -12,6 +12,10 @@ express.urlencoded({ extended: false })
 express.json({ extended: false })
 const { response } = require('express')
 const crypto = require('crypto')
+const SendEmail = require('./src/mails/sendEmail');
+const Utils = require('./src/utilities/utils');
+const send = new SendEmail();
+
 app.use(Cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(function(req, res, next) {
@@ -95,6 +99,7 @@ app.post('/getitem/:id', async function(req, res) {
   let result = 'error';
   if (login.verifyToken(req)) {
     result = await endpoint.getItem(req, res, req.params.id);
+    console.log(result)
   } else {
     res.append('Access-Control-Expose-Headers', 'token');
     res.append('token', 'error');
@@ -110,6 +115,7 @@ app.post('/pricing', jsonParser, async function(req, res) {
     res.append('Access-Control-Expose-Headers', 'token');
     res.append('token', 'error');
   }
+  console.log(result)
   res.send(result);
   // res.send(req.body)
 });
@@ -183,27 +189,45 @@ app.post('/placeorder', jsonParser,async function(req, res){
   let email = login.verifyToken(req,'token',false)
   if(email){
     let result = await endpoint.createOrder(req,email);
-    console.log(result)
     res.send(result)
   }
 })
 
 app.post('/verifyorder',async function(req,res){
-  //let email = login.verifyToken(req,'token',false)
-  let email = 'sandesh.bafna8@gmail.com'
+  let email = login.verifyToken(req,'token',false)
   if(email){
     let result = await endpoint.verifyPayment(req,res,email)
-    console.log(result)  
+    res.send(result)
   }
 })
 
 app.post('/getorders',async function(req,res){
+  let email = login.verifyToken(req,'token',false)
+//let email = 'sandesh.bafna8@gmail.com'
+  if(email){
+    let result = await endpoint.getOrderDetails(email)
+    res.send(result)
+  }
+})
+
+app.post('/getitemdetails/:id',async function(req,res){
   //let email = login.verifyToken(req,'token',false)
   let email = 'sandesh.bafna8@gmail.com'
   if(email){
-    let result = await endpoint.getOrderDetails(email)
-    //console.log(result)
-  }
-
+    let result = await endpoint.getItemInfo(req.params.id)
+    res.send(result)
+  }  
 })
+
+app.post('/paymentdetails', async function(){
+  let email = login.verifyToken(req,'token',false)
+  if(email){
+    let result = await endpoint.getPaymentDetail(req,res,email)
+  }
+  var request = require('request');
+request('https://rzp_test_lTEoCEehuqOkFf:dZpYLxagmZzczoCj1zfq7ffV@api.razorpay.com/v1/payments/pay_G8HOzTcJeIH9eQ', function (error, response, body) {
+  console.log('Response:', body);
+});
+})
+
 app.listen(8080);

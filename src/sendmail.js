@@ -4,7 +4,6 @@ const smtpTransport = require('nodemailer-smtp-transport');
 
 // async..await is not allowed in global scope, must use a wrapper
 async function sendMail(email, msg) {
-  console.log('here');
   let transporter = nodemailer.createTransport(smtpTransport({
     service: 'gmail',
     auth: {
@@ -29,7 +28,6 @@ async function sendMail(email, msg) {
       }
     });
   });
-  console.log('done');
   return true;
 }
 module.exports = { sendMail };

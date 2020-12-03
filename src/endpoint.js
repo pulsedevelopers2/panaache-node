@@ -21,6 +21,7 @@ class Endpoint {
   }
 
   async getPrice(req) {
+    console.log(req.body)
     let id = req.body.item_id;
     let quality = req.body.d_quality;
     let color = req.body.d_color;
@@ -98,7 +99,7 @@ class Endpoint {
     userBody.cart = userBody.cart.map( item => {
       delete item['image_link'];
       delete item['title'];
-      return Object.values(item);
+      return item;
     });
     let details = JSON.stringify(userBody);
     details = details.toString().replace(/"/g,'\\"');
@@ -116,26 +117,35 @@ class Endpoint {
   }
 
 async verifyPayment(req,res,email){
- let  razorpay_order_id = "order_G7pByBhDeswc71"
- let razorpay_payment_id =  "pay_G7pSvQh9FVvMOX"
- let razorpay_signature =  "a658c8c15d2c06b6c7921b30bc4a195b825af8f118e18982ed081cca704e8ea2"
+  let encryptedBody = req.headers.verify;
+  let userBodyStr = Buffer.from(encryptedBody, 'base64').toString();
+  let userBody = JSON.parse(userBodyStr); 
+  console.log(userBody)
+ let  razorpay_order_id = userBody.razorpay_order_id
+ let razorpay_payment_id =  userBody.razorpay_payment_id
+ let razorpay_signature =  userBody.razorpay_signature
  let secret = "dZpYLxagmZzczoCj1zfq7ffV"
  let result = ''
  var generatedSignature = crypto.createHmac("SHA256",secret)
  .update( razorpay_order_id + "|" + razorpay_payment_id)
  .digest("hex");
  if(generatedSignature == razorpay_signature){
-  //change status
-  result = await utils.changeOrderStatus(email,razorpay_order_id,'order_placed')
-  result = await utils.getOrderDetails(email)
+  result = await utils.changeOrderStatus(email,razorpay_order_id,'order_placed',razorpay_payment_id) //change status
+ // result = await utils.getOrderDetails(email) //return orders
+ result = await utils.deleteOrderCart(email,razorpay_order_id)
+ result = 'success'
  }else{
    result = 'error';
  }
  return result;
-  }
-
+}
   async getOrderDetails(email){
     let result =await utils.getOrderDetails(email);
+    return result
+  }
+
+  async getItemInfo(id){
+    let result = await utils.getItemInfo(id);
     return result;
   }
 
