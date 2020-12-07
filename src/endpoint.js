@@ -109,6 +109,7 @@ class Endpoint {
      data.key = "rzp_test_lTEoCEehuqOkFf";
      data.email = email;
      data.addrDetails = addr;
+     console.log(data)
     return data;
    }else{
      return 'error';
@@ -130,7 +131,8 @@ async verifyPayment(req,res,email){
  .update( razorpay_order_id + "|" + razorpay_payment_id)
  .digest("hex");
  if(generatedSignature == razorpay_signature){
-  result = await utils.changeOrderStatus(email,razorpay_order_id,'order_placed',razorpay_payment_id) //change status
+   var d = new Date();
+  result = await utils.changeOrderStatus(email,razorpay_order_id,'order_placed',razorpay_payment_id,d.getTime()) //change status
  // result = await utils.getOrderDetails(email) //return orders
  result = await utils.deleteOrderCart(email,razorpay_order_id)
  result = 'success'
@@ -141,6 +143,7 @@ async verifyPayment(req,res,email){
 }
   async getOrderDetails(email){
     let result =await utils.getOrderDetails(email);
+    console.log(result)
     return result
   }
 

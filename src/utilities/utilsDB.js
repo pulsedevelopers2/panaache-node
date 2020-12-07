@@ -71,6 +71,12 @@ class UtilsDB {
   }
 
   async addToCart(userBody, email) {
+    if(userBody.metal == null){
+      userBody.metal = "default"
+    }
+    if(userBody.size == null){
+      userBody.size = -1
+    }
     let sql = `insert into users_cart(item_id,user_email,quantity,quality,color,size,metal) values ("${userBody.item_id}","${email}",${userBody.quantity},"${userBody.quality}","${userBody.color}",${userBody.size},"${userBody.metal}") `;
     console.log(sql)
     let result = await mysql.query(sql);
@@ -86,9 +92,9 @@ class UtilsDB {
   async getOrderDetails(email,tnx_id = null){
     let sql = ''
     if(tnx_id){
-      sql = `select * from order_summary where email = '${email}' and tnx_id = '${tnx_id}'`
+      sql = `select * from order_summary where email = '${email}' and tnx_id = '${tnx_id}' order by 1 desc`
     }else{
-      sql = `select * from order_summary where email = '${email}' and status = 'order_placed'`
+      sql = `select * from order_summary where email = '${email}' and status = 'order_placed' order by 1 desc`
     }
     let result = await mysql.query(sql);
     return (result[0].length ? result[0]: []);
@@ -100,13 +106,13 @@ class UtilsDB {
     return (res[0].length ? res[0][0] : null);
   }
 
-  async changeOrderStatus(email,tnx_id,status,payment_id){
-    let sql = `update order_summary set status = "${status}",payment_id = "${payment_id}" where email = "${email}" and tnx_id = "${tnx_id}"`;
+  async changeOrderStatus(email,tnx_id,status,payment_id,time){
+    let sql = `update order_summary set status = "${status}",payment_id = "${payment_id}", timestamp = ${time} where email = "${email}" and tnx_id = "${tnx_id}"`;
     let result = await mysql.query(sql);
     //return this.getOrderDetails(email);
     return result;
   }
-  
+
   async viewCart(email) {
     let sql = `select users_cart.*, items.image_link ,items.title from users_cart left join items on users_cart.item_id = items.id where users_cart.user_email = "${email}"`
     let result = await mysql.query(sql);

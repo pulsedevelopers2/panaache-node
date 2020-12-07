@@ -78,11 +78,11 @@ class Utils {
     let total_cost = Math.round(gold_rate*100)/100 + making_charges + diamond_cost + gst;// total
     result.diamond_cost = diamond_cost;
     result.gold_rate = Math.round(gold_rate*100)/100;
-    //result.making_charges = making_charges;
+    result.making_charges = making_charges;
     result.gst = Math.round(gst);
     result.total_cost = Math.round(total_cost);
     result.gold_weight = gold_rates.weight;
-    //console.log(result)
+    //console.log('pricing',result)
     return result;
   }
 
@@ -166,6 +166,9 @@ class Utils {
 
   async getCartPrice(result) {
     let tempResult = result && await Promise.all(result.map(async item => {
+     // item.title = 'PANAACCEEE'
+      if(item.size == -1){item.size = null}
+      //if(item.metal == "default"){item.metal = null}
       let price = await this.getPrice(item.item_id, item.quality, item.color, item.size,item.metal);
       item.finalPrice = price.total_cost * item.quantity;
       return item;
@@ -187,8 +190,8 @@ class Utils {
     return result;
   }
 
-  async changeOrderStatus(email,tnx_id,status,payment_id){
-    let result = await utilsDB.changeOrderStatus(email,tnx_id,status,payment_id)
+  async changeOrderStatus(email,tnx_id,status,payment_id,time){
+    let result = await utilsDB.changeOrderStatus(email,tnx_id,status,payment_id,time)
     return result;
   }
 
