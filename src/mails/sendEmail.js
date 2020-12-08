@@ -248,7 +248,7 @@ async sendOrderConfirmation(email,orderid=0,amount=0){
         <table style="width:100% !important;border-collapse:collapse;">
         <tr>
         <td class="content footer" align="center" style="background-color:#efefef;background-image:none;background-repeat:repeat;background-position:top left;background-attachment:scroll;padding-top:20px;padding-bottom:0;padding-right:20px;padding-left:20px;">
-        <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">You were sent this email because you are a customer of <a href="https://www.hover.com/">Panaache.com</a>.<br>
+        <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">You were sent this email because you are a customer of <a href="">Panaache.com</a>.<br>
         Mailing address: Mahaveer Colong, Gadag<br>
         Email: <a href="mailto:help@panaache.com" style="color:#3ab795;text-decoration:none;">help@panaache.com</a></p>
         </td>
