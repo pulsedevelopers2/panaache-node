@@ -50,7 +50,7 @@ class Login {
     await auth.resendOtp(userBody, otp,motp);
     let user = await authDB.getUser(userBody.email)
     console.log(otp,motp)
-   // await Promise.all([this.sendMsgOtp(userBody.phone,otp),sendMail(userBody.email, otp)])    
+   await Promise.all([this.sendMsgOtp(userBody.phone,otp),sendMail(userBody.email, otp)])    
     return true;
   }
 

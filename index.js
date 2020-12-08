@@ -1,7 +1,6 @@
-let express = require('express');
 let serverless = require('serverless-http');
+let express = require('express');
 let app = express();
-let { sendOtp } = require('./src/otpTry');
 const Login = require('./src/login');
 const Endpoint = require('./src/endpoint');
 const Auth = require('./src/authutilities/authutilities');
@@ -10,6 +9,14 @@ const Cors = require('cors');
 const endpoint = new Endpoint();
 const login = new Login();
 const auth = new Auth();
+express.urlencoded({ extended: false })
+express.json({ extended: false })
+const { response } = require('express')
+const crypto = require('crypto')
+const SendEmail = require('./src/mails/sendEmail');
+const Utils = require('./src/utilities/utils');
+const send = new SendEmail();
+
 app.use(Cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(function(req, res, next) {
@@ -69,8 +76,16 @@ app.post('/cachelogin', function(req, res) {
     res.status(403).send('error');
   }
 });
-app.post('/forgot', function(req, res) {
-  let result = sendOtp();
+
+app.post('/forgotpassword',async function(req, res) {
+  let result = await login.forgotPassword(req,res);
+  res.append('Access-Control-Expose-Headers', 'error');
+  res.send(result);
+});
+
+app.post('/resetpassword',async function(req, res) {
+  let result = await login.resetPassword(req,res);
+  res.append('Access-Control-Expose-Headers', 'error');
   res.send(result);
 });
 
@@ -85,6 +100,7 @@ app.post('/getitem/:id', async function(req, res) {
   let result = 'error';
   if (login.verifyToken(req)) {
     result = await endpoint.getItem(req, res, req.params.id);
+    console.log(result)
   } else {
     res.append('Access-Control-Expose-Headers', 'token');
     res.append('token', 'error');
@@ -100,12 +116,13 @@ app.post('/pricing', jsonParser, async function(req, res) {
     res.append('Access-Control-Expose-Headers', 'token');
     res.append('token', 'error');
   }
+  console.log(result)
   res.send(result);
   // res.send(req.body)
 });
 
-app.post('/addtocart', async function(req, res) {
-  let email = await login.verifyToken(req);
+app.post('/addtocart', jsonParser,async function(req, res) {
+  let email = await login.verifyToken(req, 'token',false);
   let result = 'error';
   if (email) {
     result = await endpoint.addToCart(req, email);
@@ -113,11 +130,12 @@ app.post('/addtocart', async function(req, res) {
     res.append('Access-Control-Expose-Headers', 'token');
     res.append('token', 'error');
   }
+  console.log(result)
   res.send(result);
 });
 
 app.post('/viewcart', async function(req, res) {
-  let email = await login.verifyToken(req);
+  let email = await login.verifyToken(req ,'token',false);
   let result = 'error';
   if (email) {
     result = await endpoint.viewCart(req, email);
@@ -127,6 +145,20 @@ app.post('/viewcart', async function(req, res) {
   }
   res.send(result);
 });
+
+app.post('/remove', jsonParser,async function(req,res){
+  let email = await login.verifyToken(req,'token',false)
+ // email = "sandesh.bafna8@gmail.com"
+  console.log(email);
+  let result = 'error';
+  if(email){
+    result = await endpoint.removeItem(req,email);
+  } else {
+    res.append('Access-Control-Expose-Headers', 'token');
+    res.append('token', 'error');
+  }
+  res.send(result);
+})
 
 app.post('/viewcart1', async function(req, res) {
   let email = 'sandesh.bafna8@gmail.com';// await login.verifyToken(req);
@@ -139,6 +171,71 @@ app.post('/viewcart1', async function(req, res) {
   }
   res.send(result);
 });
+
+app.post('/updateCart', jsonParser, async function(req,res){
+    let email = await login.verifyToken(req,'token',false)
+    //email = "sandesh.bafna8@gmail.com"
+    console.log(email);
+    let result = 'error';
+    if(email){
+      result = await endpoint.UpdateCart(req,email);
+    } else {
+      res.append('Access-Control-Expose-Headers', 'token');
+      res.append('token', 'error');
+    }
+    res.send(result);
+})
+
+app.post('/placeorder', jsonParser,async function(req, res){
+  let email = login.verifyToken(req,'token',false)
+  if(email){
+    let result = await endpoint.createOrder(req,email);
+    res.send(result)
+  }
+})
+
+app.post('/verifyorder',async function(req,res){
+  let email = login.verifyToken(req,'token',false)
+  if(email){
+    let result = await endpoint.verifyPayment(req,res,email)
+    res.send(result)
+  }
+})
+
+app.post('/getorders',async function(req,res){
+  let email = login.verifyToken(req,'token',false)
+//let email = 'sandesh.bafna8@gmail.com'
+  if(email){
+    let result = await endpoint.getOrderDetails(email)
+    res.send(result)
+  }
+})
+
+app.post('/getitemdetails/:id',async function(req,res){
+  //let email = login.verifyToken(req,'token',false)
+  let email = 'sandesh.bafna8@gmail.com'
+  if(email){
+    let result = await endpoint.getItemInfo(req.params.id)
+    res.send(result)
+  }  
+})
+
+app.post('/paymentdetails', async function(){
+  let email = login.verifyToken(req,'token',false)
+  if(email){
+    let result = await endpoint.getPaymentDetail(req,res,email)
+  }
+  var request = require('request');
+request('https://rzp_test_lTEoCEehuqOkFf:dZpYLxagmZzczoCj1zfq7ffV@api.razorpay.com/v1/payments/pay_G8HOzTcJeIH9eQ', function (error, response, body) {
+  console.log('Response:', body);
+});
+})
+
+app.post('/sendmail', async function(req,res){
+  let email = 'shreyas7bafna@gmail.com';
+  let result = await send.sendOrderConfirmation(email);
+  res.send(result);
+})
 const handler = serverless(app);
 module.exports.handler = async (event, context) => {
   const result = await handler(event, context);

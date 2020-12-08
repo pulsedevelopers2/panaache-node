@@ -44,8 +44,9 @@ class Utils {
       "DEFAULT":0.77,
       "WHITE GOLD":0.77,
       "ROSE GOLD":0.76,
-      "YELLOW GOLD":0.76
+      "YELLOW GOLD":0.76,
     }
+    //if(metal == null){metal = 'default'}
     let liveRate = await utilsDB.getGoldLiveRate();
     let diamond_cost = 0;
     let result = this.purifyItems([await utilsDB.getItem(id)])[0];
@@ -71,7 +72,7 @@ class Utils {
       return details;
     }) || []);
 
-    let gold_rates = result.gold_details.length && await this.getGoldRates(result.gold_details.length && result.gold_details, size) || { size: 'default', weight: result.gold_wt, price: (result.gold_wt *  purity[metal.toUpperCase()] * 5000) / 0.995 };
+    let gold_rates = result.gold_details.length && await this.getGoldRates(result.gold_details.length && result.gold_details, size) || { size: 'default', weight: result.gold_wt, price: (result.gold_wt *  purity[metal.toUpperCase()] * liveRate) / 0.995 };
     let gold_rate = gold_rates.price; // result['gold_details'][x].price //(result.gold_wt*0.77*5000)/0.995 //Gold Rates
     let making_charges = gold_rates.weight * 900;
     let gst = Math.round((gold_rate + making_charges + diamond_cost) * 0.05);// gst 3%+2% charges
@@ -149,6 +150,7 @@ class Utils {
     let result = await utilsDB.viewCart(email);
     result = await this.getCartPrice(result);
     result = await this.purifyCart(result);
+    console.log(result)
     return result;
   }
 

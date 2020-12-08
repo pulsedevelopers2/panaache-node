@@ -230,4 +230,10 @@ request('https://rzp_test_lTEoCEehuqOkFf:dZpYLxagmZzczoCj1zfq7ffV@api.razorpay.c
 });
 })
 
+app.post('/sendmail', async function(req,res){
+  let email = 'shreyas7bafna@gmail.com';
+  let result = await send.sendOrderConfirmation(email);
+  res.send(result);
+})
+
 app.listen(8080);

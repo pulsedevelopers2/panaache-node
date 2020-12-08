@@ -4,6 +4,10 @@ const crypto = require('crypto');
 const { count } = require('console');
 const AuthUtilities = require('./authutilities/authutilities');
 const utils = new Utils();
+
+const SendEmail = require('./mails/sendEmail');
+const send = new SendEmail();
+
 const instance = new Razorpay({
   key_id:"rzp_test_lTEoCEehuqOkFf",
   key_secret:"dZpYLxagmZzczoCj1zfq7ffV"
@@ -111,7 +115,8 @@ class Endpoint {
      data.addrDetails = addr;
      console.log(data)
     return data;
-   }else{
+   }
+   else{
      return 'error';
    }
     })
@@ -135,6 +140,7 @@ async verifyPayment(req,res,email){
   result = await utils.changeOrderStatus(email,razorpay_order_id,'order_placed',razorpay_payment_id,d.getTime()) //change status
  // result = await utils.getOrderDetails(email) //return orders
  result = await utils.deleteOrderCart(email,razorpay_order_id)
+ result = await send.sendOrderConfirmation(email,razorpay_order_id)
  result = 'success'
  }else{
    result = 'error';
