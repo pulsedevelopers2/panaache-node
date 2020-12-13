@@ -32,6 +32,7 @@ async sendMail(email, msg) {
   return true;
 }
 async sendOrderConfirmation(email,orderid=0,amount=0){
+  console.log('here mail')
       let mailOptions = {
         from: 'pulse575@gmail.com',
         to: email,
