@@ -1,24 +1,45 @@
 'use strict';
 const nodemailer = require('nodemailer');
 // const smtpTransport = require('nodemailer-smtp-transport');
+let transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  service: 'gmail',
+  auth: {
+    user: 'pulse575@gmail.com',
+    pass: 'pqiieofuwdrrlewl'
+  }
+});
 
+class SendEmail {
 // async..await is not allowed in global scope, must use a wrapper
-async function sendMail(email, msg) {
-  let transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    service: 'gmail',
-    auth: {
-      user: 'pulse575@gmail.com',
-      pass: 'pqiieofuwdrrlewl'
-    }
-  });
-  let mailOptions = {
-    from: 'pulse575@gmail.com',
-    to: email,
-    subject: 'Panaache OTP Verification',
-    html: `
+  async sendMail(email, msg) {
+    let mailOptions = {
+      from: 'pulse575@gmail.com',
+      to: email,
+      subject: 'Panaache OTP Verification',
+      html: `<h3>Verification Mail</h3><p>Your Panaache Verification Code is ${msg}</p>`
+    };
+    await new Promise(resolve => {
+      transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+          console.log(error);
+          resolve();
+        } else {
+          console.log(`Email sent: ${info.response}`);
+          resolve();
+        }
+      });
+    });
+    return true;
+  }
+  async sendOrderConfirmation(email, orderid = 0, date) {
+    let mailOptions = {
+      from: 'pulse575@gmail.com',
+      to: email,
+      subject: 'Panaache Order Confirmation',
+      html: `
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml">
         <head>
@@ -177,7 +198,7 @@ async function sendMail(email, msg) {
           font-weight: bold;
          }
          .myOrder {
-           background-color: black;
+           background-color: #4bb543;
            border: 0;
            border-radius: 5px;
            text-decoration: none;
@@ -207,9 +228,16 @@ async function sendMail(email, msg) {
                   </td>
                 </tr>
                 <tr>
-                  <td class="content" style="background-color:white;background-image:none;background-repeat:repeat;background-position:top left;background-attachment:scroll;padding-top:20px;padding-bottom:0;padding-right:20px;padding-left:20px;">        
-        <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">Your Panaache verification code is<br>
-        <p class="myOrder">${msg}</a><br>
+                  <td class="content" style="background-color:white;background-image:none;background-repeat:repeat;background-position:top left;background-attachment:scroll;padding-top:20px;padding-bottom:0;padding-right:20px;padding-left:20px;">
+                    <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">Hello,</p>
+                    
+                    <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">Thank you for placing and order with us. Your order is being processed. Please keep this mail for further reference.</p>
+        
+        <p style="font-size:18px;font-weight:bold;margin-bottom:20px;">ORDER INFORMATION</p>
+        
+        <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">Order Date: ${date}<br>Order ID: ${orderid}<br>
+        <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">For more details on your order please click on the following button</a>.</p><br>
+        <a href="https://panaache.in/myOrders" class="myOrder">My Orders</a><br>
         <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">For any queries please write a mail to writeandmailtous@gmail.com</a>.</p>
         <p style="font-size:14px;font-weight:normal;margin-bottom:20px;">This is an automatically generated email. please do not reply to this email</p>
         
@@ -245,18 +273,19 @@ async function sendMail(email, msg) {
         </table>
         </body>
         </html>`
-  };
-  await new Promise(resolve => {
-    transporter.sendMail(mailOptions, function(error, info) {
-      if (error) {
-        console.log(error);
-        resolve();
-      } else {
-        console.log(`Email sent: ${info.response}`);
-        resolve();
-      }
+    };
+    await new Promise(resolve => {
+      transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+          console.log(error);
+          resolve();
+        } else {
+          console.log(`Email sent: ${info.response}`);
+          resolve();
+        }
+      });
     });
-  });
-  return true;
+    return true;
+  }
 }
-module.exports = { sendMail };
+module.exports = SendEmail;

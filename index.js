@@ -1,15 +1,15 @@
-let express = require('express');
 let serverless = require('serverless-http');
+let express = require('express');
 let app = express();
-let { sendOtp } = require('./src/otpTry');
 const Login = require('./src/login');
 const Endpoint = require('./src/endpoint');
-const Auth = require('./src/authutilities/authutilities');
 const bodyParser = require('body-parser');
 const Cors = require('cors');
 const endpoint = new Endpoint();
 const login = new Login();
-const auth = new Auth();
+express.urlencoded({ extended: false });
+express.json({ extended: false });
+
 app.use(Cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(function(req, res, next) {
@@ -45,32 +45,34 @@ app.post('/resend', async function(req, res) {
 });
 
 app.post('/login', async function(req, res) {
-  let result = await login.loginUser(req);
-  res.append('Access-Control-Expose-Headers', 'token,error');
-  res.append('token', result);
-  res.send('Success');
+  let result = await login.loginUser(req, res);
+  if (result) {
+    res.append('Access-Control-Expose-Headers', 'token,error');
+    res.append('token', result);
+    res.send('Success');
+  }
 });
 
-app.post('/cachelogin', function(req, res) {
-  let result = login.verifyToken(req, 'cache');
+app.post('/cachelogin', async function(req, res) {
+  let result = await login.verifyToken(req, 'cache');
   if (result) {
     res.append('Access-Control-Expose-Headers', 'token');
     res.append('token', result);
     res.send('Success');
   } else {
-    let parser = auth.createKey(req.headers);
-    let token = null;
-    let cacheToken = null;
-    result = JSON.stringify({
-      token: this.encrypt(token, parser),
-      cacheToken: this.encrypt(cacheToken, parser)
-    });
-    result = Buffer.from(result).toString('base64');
     res.status(403).send('error');
   }
 });
-app.post('/forgot', function(req, res) {
-  let result = sendOtp();
+
+app.post('/forgotpassword', async function(req, res) {
+  let result = await login.forgotPassword(req, res);
+  res.append('Access-Control-Expose-Headers', 'error');
+  res.send(result);
+});
+
+app.post('/resetpassword', async function(req, res) {
+  let result = await login.resetPassword(req, res);
+  res.append('Access-Control-Expose-Headers', 'error');
   res.send(result);
 });
 
@@ -83,7 +85,7 @@ app.post('/getitems/:category', async function(req, res) {
 
 app.post('/getitem/:id', async function(req, res) {
   let result = 'error';
-  if (login.verifyToken(req)) {
+  if (await login.verifyToken(req)) {
     result = await endpoint.getItem(req, res, req.params.id);
   } else {
     res.append('Access-Control-Expose-Headers', 'token');
@@ -94,7 +96,7 @@ app.post('/getitem/:id', async function(req, res) {
 
 app.post('/pricing', jsonParser, async function(req, res) {
   let result = 'error';
-  if (login.verifyToken(req)) {
+  if (await login.verifyToken(req)) {
     result = await endpoint.getPrice(req, res);
   } else {
     res.append('Access-Control-Expose-Headers', 'token');
@@ -104,8 +106,8 @@ app.post('/pricing', jsonParser, async function(req, res) {
   // res.send(req.body)
 });
 
-app.post('/addtocart', async function(req, res) {
-  let email = await login.verifyToken(req);
+app.post('/addtocart', jsonParser, async function(req, res) {
+  let email = await login.verifyToken(req, 'token', false);
   let result = 'error';
   if (email) {
     result = await endpoint.addToCart(req, email);
@@ -117,10 +119,23 @@ app.post('/addtocart', async function(req, res) {
 });
 
 app.post('/viewcart', async function(req, res) {
-  let email = await login.verifyToken(req);
+  let email = await login.verifyToken(req, 'token', false);
   let result = 'error';
   if (email) {
     result = await endpoint.viewCart(req, email);
+  } else {
+    res.append('Access-Control-Expose-Headers', 'token');
+    res.append('token', 'error');
+  }
+  res.send(result);
+});
+
+app.post('/remove', jsonParser, async function(req, res) {
+  let email = await login.verifyToken(req, 'token', false);
+  // email = "sandesh.bafna8@gmail.com"
+  let result = 'error';
+  if (email) {
+    result = await endpoint.removeItem(req, email);
   } else {
     res.append('Access-Control-Expose-Headers', 'token');
     res.append('token', 'error');
@@ -139,6 +154,61 @@ app.post('/viewcart1', async function(req, res) {
   }
   res.send(result);
 });
+
+app.post('/updateCart', jsonParser, async function(req, res) {
+  let email = await login.verifyToken(req, 'token', false);
+  // email = "sandesh.bafna8@gmail.com"
+  let result = 'error';
+  if (email) {
+    result = await endpoint.UpdateCart(req, email);
+  } else {
+    res.append('Access-Control-Expose-Headers', 'token');
+    res.append('token', 'error');
+  }
+  res.send(result);
+});
+
+app.post('/placeorder', jsonParser, async function(req, res) {
+  let email = await login.verifyToken(req, 'token', false);
+  if (email) {
+    let result = await endpoint.createOrder(req, email);
+    res.send(result);
+  }
+});
+
+app.post('/verifyorder', async function(req, res) {
+  let email = await login.verifyToken(req, 'token', false);
+  if (email) {
+    let result = await endpoint.verifyPayment(req, res, email);
+    res.send(result);
+  }
+});
+
+app.post('/getorders', async function(req, res) {
+  let email = await login.verifyToken(req, 'token', false);
+  // let email = 'sandesh.bafna8@gmail.com'
+  if (email) {
+    let result = await endpoint.getOrderDetails(email);
+    res.send(result);
+  }
+});
+
+app.post('/getitemdetails/:id', async function(req, res) {
+  // let email = await login.verifyToken(req,'token',false)
+  let email = 'sandesh.bafna8@gmail.com';
+  if (email) {
+    let result = await endpoint.getItemInfo(req.params.id);
+    res.send(result);
+  }
+});
+
+app.post('/paymentdetails', async function(req, res) {
+  let email = await login.verifyToken(req, 'token', false);
+  if (email) {
+    await endpoint.getPaymentDetail(req, res, email);
+  }
+});
+
 const handler = serverless(app);
 module.exports.handler = async (event, context) => {
   const result = await handler(event, context);

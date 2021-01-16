@@ -18,14 +18,13 @@ class UtilsDB {
   // }
 
   async getItems(category) {
-    var i;
+    let i;
     let cat = category.split(',');
-    let sql1 = `${cat[0]} = 1`
-    for( i = 1; i < cat.length; i++){
+    let sql1 = `${cat[0]} = 1`;
+    for (i = 1; i < cat.length; i++) {
       sql1 = sql1.concat(` and ${cat[i]} = 1`);
     }
     let sql = `Select * from items where id in(select item_id from categories where ${sql1})`;
-    console.log(sql)
     let res = await mysql.query(sql);
     return (res[0].length ? res[0] : null);
   }
@@ -71,28 +70,62 @@ class UtilsDB {
   }
 
   async addToCart(userBody, email) {
+    if (userBody.metal === null) {
+      userBody.metal = 'default';
+    }
+    if (userBody.size === null) {
+      userBody.size = -1;
+    }
     let sql = `insert into users_cart(item_id,user_email,quantity,quality,color,size,metal) values ("${userBody.item_id}","${email}",${userBody.quantity},"${userBody.quality}","${userBody.color}",${userBody.size},"${userBody.metal}") `;
-    console.log(sql)
     let result = await mysql.query(sql);
     return result;
   }
 
+  async addTnxDetails(email, tnx_id, details, rate, amount, timestamp) {
+    let sql = `insert into order_summary(tnx_id,email,order_details,curr_price,amount,timestamp) values ("${tnx_id}","${email}","${details}",${rate},${amount},${timestamp}) `;
+    let result = await mysql.query(sql);
+    return result;
+  }
+
+  async getOrderDetails(email, tnx_id = null) {
+    let sql = '';
+    if (tnx_id) {
+      sql = `select * from order_summary where email = '${email}' and tnx_id = '${tnx_id}' order by 1 desc`;
+    } else {
+      sql = `select * from order_summary where email = '${email}' and status = 'order_placed' order by 1 desc`;
+    }
+    let result = await mysql.query(sql);
+    return (result[0].length ? result[0] : []);
+  }
+
+  async getItemInfo(id) {
+    let sql = `Select image_link,title from items where id = "${id}"`;
+    let res = await mysql.query(sql);
+    return (res[0].length ? res[0][0] : null);
+  }
+
+  async changeOrderStatus(email, tnx_id, status, payment_id, time) {
+    let sql = `update order_summary set status = "${status}",payment_id = "${payment_id}", timestamp = ${time} where email = "${email}" and tnx_id = "${tnx_id}"`;
+    let result = await mysql.query(sql);
+    // return this.getOrderDetails(email);
+    return result;
+  }
+
   async viewCart(email) {
-    let sql = `select users_cart.*, items.image_link ,items.title from users_cart left join items on users_cart.item_id = items.id where users_cart.user_email = "${email}"`
+    let sql = `select users_cart.*, items.image_link ,items.title from users_cart left join items on users_cart.item_id = items.id where users_cart.user_email = "${email}"`;
     let result = await mysql.query(sql);
     return (result[0].length ? result[0] : null);
   }
 
-  async updateCart(cart_id,quantity,email){
-    let sql = `update users_cart set quantity = ${quantity} where cart_id = ${cart_id} and email = "${email}"`
-    let result = await mysql.query(sql);
+  async updateCart(cart_id, quantity, email) {
+    let sql = `update users_cart set quantity = ${quantity} where cart_id = ${cart_id} and email = "${email}"`;
+    await mysql.query(sql);
     return this.viewCart(email);
   }
 
-  async removeItem(id,email){
+  async removeItem(id, email) {
     let sql = `Delete from users_cart where cart_id = '${id}' and user_email = "${email}"`;
-    console.log(sql)
-    let result = await mysql.query(sql);
+    await mysql.query(sql);
     return this.viewCart(email);
   }
 }

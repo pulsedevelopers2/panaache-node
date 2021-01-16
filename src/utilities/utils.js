@@ -6,7 +6,7 @@ class Utils {
     let result = await utilsDB.getItems(category);
     return this.purifyItems(result);
   }
-    
+  
   async getItem(id) {
     let liveRate = await utilsDB.getGoldLiveRate();
     let result = await utilsDB.getItem(id);
@@ -16,12 +16,12 @@ class Utils {
     result.dcolors = color.map(item => {return item.color;});
     result = this.purifyItems([result])[0];
     [result.metal, result.fashion, result.stock] = await Promise.all([this.getItemDetails('metal', id), this.getItemDetails('fashion', id), this.getItemDetails('stock', id)]);
-    result.gold_details = result.gold_details.map(item => {
+    result.gold_details = result.gold_details && result.gold_details.map(item => {
       let price = 0;
       price = (item.weight * 0.77 * liveRate) / 0.995;
       let details = this.getGoldCosting(item, price);
       return details;
-    });
+    }) || [];
     return result;
   }
 
@@ -39,13 +39,14 @@ class Utils {
     return detail;
   }
 
-  async getPrice(id, quality, color, size,metal='default') {
-    let purity={
-      "DEFAULT":0.77,
-      "WHITE GOLD":0.77,
-      "ROSE GOLD":0.76,
-      "YELLOW GOLD":0.76
-    }
+  async getPrice(id, quality, color, size, metal = 'default') {
+    let purity = {
+      'DEFAULT': 0.77,
+      'WHITE GOLD': 0.77,
+      'ROSE GOLD': 0.76,
+      'YELLOW GOLD': 0.76
+    };
+    // if(metal == null){metal = 'default'}
     let liveRate = await utilsDB.getGoldLiveRate();
     let diamond_cost = 0;
     let result = this.purifyItems([await utilsDB.getItem(id)])[0];
@@ -67,16 +68,17 @@ class Utils {
       let price = 0;
       price = (item.weight * purity[metal.toUpperCase()] * liveRate) / 0.995;
       let details = this.getGoldCosting(item, price);
+      details.mkCharges = details.weight * 900;
       return details;
     }) || []);
 
-    let gold_rates = result.gold_details.length && await this.getGoldRates(result.gold_details.length && result.gold_details, size) || { size: 'default', weight: result.gold_wt, price: (result.gold_wt *  purity[metal.toUpperCase()] * 5000) / 0.995 };
+    let gold_rates = result.gold_details.length && await this.getGoldRates(result.gold_details.length && result.gold_details, size) || { size: 'default', weight: result.gold_wt, price: (result.gold_wt * purity[metal.toUpperCase()] * liveRate) / 0.995 };
     let gold_rate = gold_rates.price; // result['gold_details'][x].price //(result.gold_wt*0.77*5000)/0.995 //Gold Rates
     let making_charges = gold_rates.weight * 900;
     let gst = Math.round((gold_rate + making_charges + diamond_cost) * 0.05);// gst 3%+2% charges
-    let total_cost = Math.round(gold_rate*100)/100 + making_charges + diamond_cost + gst;// total
+    let total_cost = Math.round(gold_rate * 100) / 100 + making_charges + diamond_cost + gst;// total
     result.diamond_cost = diamond_cost;
-    result.gold_rate = Math.round(gold_rate*100)/100;
+    result.gold_rate = Math.round(gold_rate * 100) / 100;
     result.making_charges = making_charges;
     result.gst = Math.round(gst);
     result.total_cost = Math.round(total_cost);
@@ -119,17 +121,17 @@ class Utils {
   }
 
   purifyCart(body) {
-    let newBody = [];
-    body && body.forEach(item => {
+    let newBody = body && body.reduce((prev, item) => {
       let item_temp = item;
       item_temp.image_link = JSON.parse(item_temp.image_link);
-      newBody.push(item_temp);
-    });
+      prev.push(item_temp);
+      return prev;
+    }, []) || [];
     return newBody;
   }
 
-  async removeItem(id,email){
-    let result = await utilsDB.removeItem(id,email);
+  async removeItem(id, email) {
+    let result = await utilsDB.removeItem(id, email);
     result = await this.getCartPrice(result);
     result = await this.purifyCart(result);
     return result;
@@ -150,20 +152,58 @@ class Utils {
     return result;
   }
 
-  async updateCart(cart_id,quantity,email){
-    let result = await utilsDB.updateCart(cart_id,quantity,email);
+  async updateCart(cart_id, quantity, email) {
+    let result = await utilsDB.updateCart(cart_id, quantity, email);
     result = await this.getCartPrice(result);
     result = await this.purifyCart(result);
     return result;
   }
 
+  async addTnxDetails(email, id, userBody, rate, amount, timestamp) {
+    await utilsDB.addTnxDetails(email, id, userBody, rate, amount, timestamp);
+    return true;
+  }
+
   async getCartPrice(result) {
     let tempResult = result && await Promise.all(result.map(async item => {
-      let price = await this.getPrice(item.item_id, item.quality, item.color, item.size,item.metal);
+      // item.title = 'PANAACCEEE'
+      if (item.size === -1) {item.size = null;}
+      // if(item.metal == "default"){item.metal = null}
+      let price = await this.getPrice(item.item_id, item.quality, item.color, item.size, item.metal);
       item.finalPrice = price.total_cost * item.quantity;
       return item;
     })) || [];
     return tempResult;
+  }
+
+  async getOrderDetails(email) {
+    let result = await utilsDB.getOrderDetails(email);
+    result.forEach(async item => {
+      item.order_details = JSON.parse(item.order_details);
+      await item.order_details.cart.forEach(async cartItem => {
+        result = await utilsDB.getItem(cartItem.item_id);
+        cartItem.image_link = JSON.stringify(result.image_link);
+      });
+    });
+    return result;
+  }
+
+  async changeOrderStatus(email, tnx_id, status, payment_id, time) {
+    let result = await utilsDB.changeOrderStatus(email, tnx_id, status, payment_id, time);
+    return result;
+  }
+
+  async deleteOrderCart(email, tnx_id) {
+    let result = await utilsDB.getOrderDetails(email, tnx_id);
+    result = JSON.parse(result[0].order_details).cart;
+    result.forEach(item => {
+      utilsDB.removeItem(item.cart_id, item.user_email);
+    });
+  }
+
+  async getItemInfo(id) {
+    let result = await utilsDB.getItemInfo(id);
+    return result;
   }
 }
 module.exports = Utils;
