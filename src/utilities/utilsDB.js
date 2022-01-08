@@ -10,21 +10,20 @@ class UtilsDB {
       database: 'u386445862_panaache'
     });
   }
+    
   // async getItems(category) {
   //   let sql = `Select * from items where category = "${category}"`;
   //   let res = await mysql.query(sql);
   //   return (res[0].length ? res[0] : null);
   // }
+
   async getItems(category) {
-    let i;
     let cat = category.split(',');
-    let sql1 = `${cat[0]} = 1`;
-    console.log(sql1);
-    for (i = 1; i < cat.length; i++) {
-      sql1 = sql1.concat(` and ${cat[i]} = 1`);
+    let sql = null;
+    if (cat.length) {
+      sql = ` where${cat.reduce((prev, curr) => {return `${prev} category="${curr}";`;}, '')}`;
     }
-    let sql = `Select * from items where id in(select item_id from categories where ${sql1})`;
-    console.log(sql);
+    sql = `Select * from items${sql}`;
     let res = await mysql.query(sql);
     return (res[0].length ? res[0] : null);
   }
@@ -51,10 +50,22 @@ class UtilsDB {
     let res = await mysql.query(sql);
     return (res[0].length ? res[0] : null);
   }
-  async getItemDetails(select, table, detail, id) {
-    let sql = `Select ${select} from ${table[detail] || detail} where id = "${id}"`;
+  async getItemDetails(table, detail, id) {
+    let sql = `Select ${detail} from ${table[detail] || detail} where id = "${id}"`;
     let res = await mysql.query(sql);
     return (res[0].length ? res[0] : null);
+  }
+
+  async getGoldPurityChart() {
+    let sql = 'Select * from m_category where metal_category = "gold" order by 1 desc';
+    let res = await mysql.query(sql);
+    return (res[0].length ? res[0] : {});
+  }
+
+  async getPlatinumPurityChart() {
+    let sql = 'Select * from m_category where metal_category = "platinum" order by 1 desc';
+    let res = await mysql.query(sql);
+    return (res[0].length ? res[0] : {});
   }
 
   async getPrice(ct, quality, color) {
@@ -127,37 +138,6 @@ class UtilsDB {
     let sql = `Delete from users_cart where cart_id = '${id}' and user_email = "${email}"`;
     await mysql.query(sql);
     return this.viewCart(email);
-  }
-
-  async getUsers(){
-    let sql = `select * from users`;
-    let result = await mysql.query(sql)
-    return (result[0].length ? result[0] : null);
-  }
-
-  async getUser(id){
-    let sql = `select * from users where id = '${id}'`;
-    let result = await mysql.query(sql)
-    return (result[0].length ? result[0][0] : null);
-  }
-
-  async getOrders(){
-    let sql = `select * from order_summary`;
-    let result = await mysql.query(sql)
-    return (result[0].length ? result[0] : null);
-  }
-
-  async getOrder(id){
-    let sql = `select * from order_summary where id = '${id}'`;
-    let result = await mysql.query(sql)
-    let res = result[0][0] 
-    let res1 = {
-      ...res,
-      order_det: JSON.parse(res.order_details)
-    }
-    console.log(result[0][0])
-    return res1
-    // return (result[0].length ? result[0][0] : null);
   }
 }
 module.exports = UtilsDB;

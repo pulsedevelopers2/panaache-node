@@ -72,7 +72,6 @@ class Endpoint {
   //     return data;
   //   })
   // }
-  
   async createOrder(req, email) {
     let encryptedBody = req.body.checkout;
     // console.log(typeof encryptedBody)
@@ -151,25 +150,5 @@ class Endpoint {
     let result = await utils.getItemInfo(id);
     return result;
   }
-
-  async getUsers(){
-    let result = await utils.getUsers();
-    return result;
-  }
-
-  async getUser(id){
-    let result = await utils.getUser(id);
-    return result;
-  }
-
-  async getOrders(){
-    let result = await utils.getOrders();
-    return result;
-  }
-  async getOrder(id){
-    let result = await utils.getOrder(id);
-    return result;
-  }
-
 }
 module.exports = Endpoint;

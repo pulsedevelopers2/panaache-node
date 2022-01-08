@@ -84,23 +84,23 @@ app.post('/getitems/:category', async function(req, res) {
 
 app.post('/getitem/:id', async function(req, res) {
   let result = 'error';
-  if (await login.verifyToken(req)) {
-    result = await endpoint.getItem(req, res, req.params.id);
-  } else {
-    res.append('Access-Control-Expose-Headers', 'token');
-    res.append('token', 'error');
-  }
+  // if (await login.verifyToken(req)) {
+  result = await endpoint.getItem(req, res, req.params.id);
+  // } else {
+  //   res.append('Access-Control-Expose-Headers', 'token');
+  //   res.append('token', 'error');
+  // }
   res.send(result);
 });
 
 app.post('/pricing', jsonParser, async function(req, res) {
   let result = 'error';
-  if (await login.verifyToken(req)) {
-    result = await endpoint.getPrice(req, res);
-  } else {
-    res.append('Access-Control-Expose-Headers', 'token');
-    res.append('token', 'error');
-  }
+  // if (await login.verifyToken(req)) {
+  result = await endpoint.getPrice(req, res);
+  // } else {
+  //   res.append('Access-Control-Expose-Headers', 'token');
+  //   res.append('token', 'error');
+  // }
   res.send(result);
   // res.send(req.body)
 });
@@ -207,25 +207,5 @@ app.post('/paymentdetails', async function(req, res) {
     await endpoint.getPaymentDetail(req, res, email);
   }
 });
-
-app.get('/users', async function(req,res){
-  let result = await endpoint.getUsers();
-  res.send(result)
-})
-
-app.get('/users/:id', async function(req,res){
-  let result = await endpoint.getUser(req.params.id);
-  res.send(result)
-})
-
-app.get('/orders', async function(req,res){
-  let result = await endpoint.getOrders();
-  res.send(result)
-})
-
-app.get('/orders/:id', async function(req,res){
-  let result = await endpoint.getOrder(req.params.id);
-  res.send(result)
-})
 
 app.listen(8080);
